@@ -1,75 +1,10 @@
 var sha1 = require('sha1');
-var Promise = require('bluebird');
-var request = Promise.promisify(require('request'))
-
-var prefix = 'https://api.weixin.qq.com/cgi-bin/token';
-var api = {
-    accessToken: prefix + '?grant_type=client_credential&'
-}
-function Wechat(opts){
-    var that = this
-    this.appID = opts.appID;
-    this.appsecret = opts.appsecret
-    this.getAccessToken = opts.getAccessToken
-    this.saveAccessToken = opts.saveAccessToken
-
-    this.getAccessToken()
-        .then(function(data){
-            try{
-                data = JSON.parse(data)
-            }
-            catch(e){
-                return that.updateAccessToken()
-            }
-
-            if(that.isValidAccessToken(data)){
-                Promise.resolve(data)
-            }else{
-                return that.updateAccessToken()
-            }
-        })
-        .then(function(data){
-            that.access_token = data.access_token
-            that.expires_in = data.expires_in
-            console.log(data);
-            that.saveAccessToken(data)
-        })
-}
-Wechat.prototype.isValidAccessToken = function(data){
-    if(!data || !data.access_token || !data.expires_in){
-        return false
-    }
-    var access_token = data.access_token
-    var expires_in = data.expires_in
-    var now = new Date().getTime()
-
-    if(now < expires_in){
-        return true
-    }else{
-        return false
-    }
-}
-Wechat.prototype.updateAccessToken = function(){
-    var appID = this.appID
-    var appsecret = this.appsecret
-    var url = api.accessToken + 'appid='+ appID +'&secret=' + appsecret;
-    return new Promise(function(resolve, reject){
-        request({url: url, json: true}).then(function(response){
-            console.log(response.body)
-            var data =  response.body;
-            console.log(data.expires_in, data.access_token)
-            var now = (new Date().getTime());
-            var expires_in = now + (data.expires_in - 20) * 1000;
-
-            data.expires_in = expires_in
-            resolve(data)
-        })
-    })
-}
+var getRawBody = require('raw-body')
+var Wechat = require('./wechat')
+var util = require('./util')
 
 module.exports = function(config){
     var wechat = new Wechat(config);
-
     return function *(next){
         console.log(this.query);
         var token = config.token;
@@ -79,11 +14,87 @@ module.exports = function(config){
         var echostr = this.query.echostr;
         var str = [token, timestamp, nonce].sort().join('');
         var sha = sha1(str);
-        if(sha === signature){
-            console.log(echostr, typeof echostr + '');
-            this.body = echostr + '';
-        }else{
-            this.body = 'wrong';
+
+        if(this.method === "GET"){
+            if(sha === signature){
+                console.log(echostr, typeof echostr + '');
+                this.body = echostr + '';
+            }else{
+                this.body = 'wrong';
+            }
+        }else if(this.method === "POST"){
+            if(sha !== signature){
+                this.body = 'wrong';
+                return false;
+            }
+
+            var data = yield getRawBody(this.req, {
+                length: this.length,
+                limit: 'lmb',
+                encoding: this.charset
+            })
+            console.log(data.toString());
+            var content = yield util.parseXMLAsync(data);
+            console.log(content);
+            var message = util.formatMessage(content.xml);
+            if(message.MsgType === 'event'){
+                if(message.Event === 'subscribe'){
+                    var now = new Date().getTime()
+                    var replay = "hello 欢迎关注！"
+                    this.body = '<xml>\
+                                    <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
+                                    <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
+                                    <CreateTime>'+ now +'</CreateTime>\
+                                    <MsgType><![CDATA[text]]></MsgType>\
+                                    <Content><![CDATA['+ replay +']]></Content>\
+                                </xml>';
+                }
+            }
+            if(message.MsgType === 'text'){
+                var now = new Date().getTime()
+                var replay = "您回复的是文字！"
+                this.body = '<xml>\
+                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
+                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
+                                <CreateTime>'+ now +'</CreateTime>\
+                                <MsgType><![CDATA[text]]></MsgType>\
+                                <Content><![CDATA['+ replay +']]></Content>\
+                            </xml>';
+            }
+            if(message.MsgType === 'image'){
+                var now = new Date().getTime()
+                var replay = "您回复的是图片！"
+                this.body = '<xml>\
+                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
+                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
+                                <CreateTime>'+ now +'</CreateTime>\
+                                <MsgType><![CDATA[text]]></MsgType>\
+                                <Content><![CDATA['+ replay +']]></Content>\
+                            </xml>';
+            }
+            if(message.MsgType === 'voice'){
+                var now = new Date().getTime()
+                var replay = "您回复的是语音！"
+                this.body = '<xml>\
+                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
+                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
+                                <CreateTime>'+ now +'</CreateTime>\
+                                <MsgType><![CDATA[text]]></MsgType>\
+                                <Content><![CDATA['+ replay +']]></Content>\
+                            </xml>';
+            }
+            if(message.MsgType === 'video'){
+                var now = new Date().getTime()
+                var replay = "您回复的是视频！"
+                this.body = '<xml>\
+                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
+                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
+                                <CreateTime>'+ now +'</CreateTime>\
+                                <MsgType><![CDATA[text]]></MsgType>\
+                                <Content><![CDATA['+ replay +']]></Content>\
+                            </xml>';
+            }
         }
+        
     }
 }
