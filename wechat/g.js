@@ -3,10 +3,11 @@ var getRawBody = require('raw-body')
 var Wechat = require('./wechat')
 var util = require('./util')
 
-module.exports = function(config){
+module.exports = function(config, handler){
     var wechat = new Wechat(config);
     return function *(next){
         console.log(this.query);
+        console.log(config, handler.call())
         var token = config.token;
         var signature = this.query.signature;
         var timestamp = this.query.timestamp;
@@ -34,66 +35,13 @@ module.exports = function(config){
                 encoding: this.charset
             })
             console.log(data.toString());
-            var content = yield util.parseXMLAsync(data);
-            console.log(content);
-            var message = util.formatMessage(content.xml);
-            if(message.MsgType === 'event'){
-                if(message.Event === 'subscribe'){
-                    var now = new Date().getTime()
-                    var replay = "hello 欢迎关注！"
-                    this.body = '<xml>\
-                                    <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
-                                    <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
-                                    <CreateTime>'+ now +'</CreateTime>\
-                                    <MsgType><![CDATA[text]]></MsgType>\
-                                    <Content><![CDATA['+ replay +']]></Content>\
-                                </xml>';
-                }
-            }
-            if(message.MsgType === 'text'){
-                var now = new Date().getTime()
-                var replay = "您回复的是文字！"
-                this.body = '<xml>\
-                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
-                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
-                                <CreateTime>'+ now +'</CreateTime>\
-                                <MsgType><![CDATA[text]]></MsgType>\
-                                <Content><![CDATA['+ replay +']]></Content>\
-                            </xml>';
-            }
-            if(message.MsgType === 'image'){
-                var now = new Date().getTime()
-                var replay = "您回复的是图片！"
-                this.body = '<xml>\
-                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
-                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
-                                <CreateTime>'+ now +'</CreateTime>\
-                                <MsgType><![CDATA[text]]></MsgType>\
-                                <Content><![CDATA['+ replay +']]></Content>\
-                            </xml>';
-            }
-            if(message.MsgType === 'voice'){
-                var now = new Date().getTime()
-                var replay = "您回复的是语音！"
-                this.body = '<xml>\
-                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
-                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
-                                <CreateTime>'+ now +'</CreateTime>\
-                                <MsgType><![CDATA[text]]></MsgType>\
-                                <Content><![CDATA['+ replay +']]></Content>\
-                            </xml>';
-            }
-            if(message.MsgType === 'video'){
-                var now = new Date().getTime()
-                var replay = "您回复的是视频！"
-                this.body = '<xml>\
-                                <ToUserName><![CDATA['+ message.FromUserName +']]></ToUserName>\
-                                <FromUserName><![CDATA['+ message.ToUserName +']]></FromUserName>\
-                                <CreateTime>'+ now +'</CreateTime>\
-                                <MsgType><![CDATA[text]]></MsgType>\
-                                <Content><![CDATA['+ replay +']]></Content>\
-                            </xml>';
-            }
+            var content = yield util.parseXMLAsync(data); //xml转json
+            var message = util.formatMessage(content.xml); //格式化json
+            
+            this.weixin = message
+            yield handler.call(this, next)
+
+            wechat.reply.call(this)
         }
         
     }
