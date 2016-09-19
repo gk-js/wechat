@@ -1,1 +1,1 @@
-"[object Object]"
+{"access_token":"FJq25DUwNDWebb2YF05M-9wkDYIirN_jebQGo6s2hh2ztp-s8fTrAl_ZfqzOdkjovxYhE7Yq70nNUA6g0n8Tl0okMXmMgoHsH4EYiANGP4OnkM5LidVQ-34yzppHcVIWLKAiACAUTJ","expires_in":1474305090196}

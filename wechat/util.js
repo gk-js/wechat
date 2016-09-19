@@ -59,5 +59,6 @@ exports.tmpl = function(content, message){
     info.toUserName = fromUsername
     info.fromUserName = toUserName
     console.log(info)
+    console.log(tmpl.compiled(info))
     return tmpl.compiled(info)
 }

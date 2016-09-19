@@ -1,5 +1,9 @@
 'use strict'
 
+var config = require('./config')
+var Wechat = require('./wechat/wechat')
+var wechatApi = new Wechat(config.wechat)
+
 exports.reply = function*(next){
     var message = this.weixin
 
@@ -53,7 +57,31 @@ exports.reply = function*(next){
                     url: 'https://movie.douban.com/subject/26683290/'
                 }
             ]
+        }else if(content === "5"){
+            var data = yield wechatApi.uploadMaterial('image', __dirname + '/m.jpg')
+            reply = {
+                type: 'image',
+                mediaId: data.media_id
+            }
+        }else if(content === "6"){
+            var data = yield wechatApi.uploadMaterial('video', __dirname + '/m.mp4')
+            reply = {
+                type: 'video',
+                mediaId: data.media_id,
+                title: '冰菓',
+                description: '冰菓 OP'
+            }
+            
+        }else if(content === "7"){
+            reply = {
+                type: 'video',
+                mediaId: 'ifA_p6beyK178P1Ur3kB-RT8XO-_bGCadEnnpZWYnE56rTn6i7KqSVfZZ8syO7tC',
+                title: '冰菓',
+                description: '冰菓 OP'
+            }
+            
         }
+        
         this.body = reply;
     }
     yield next
