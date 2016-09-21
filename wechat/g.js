@@ -6,8 +6,6 @@ var util = require('./util')
 module.exports = function(config, handler){
     var wechat = new Wechat(config);
     return function *(next){
-        console.log(this.query);
-        console.log(config, handler.call())
         var token = config.token;
         var signature = this.query.signature;
         var timestamp = this.query.timestamp;

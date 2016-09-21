@@ -80,6 +80,31 @@ exports.reply = function*(next){
                 description: '冰菓 OP'
             }
             
+        }else if(content === "8"){
+            var data = yield wechatApi.uploadMaterial('image', __dirname + '/m.jpg', {type: 'image'})
+            reply = {
+                type: 'image',
+                mediaId: data.media_id
+            }
+        }else if(content === "9"){
+            var data = yield wechatApi.uploadMaterial('video', __dirname + '/m.mp4', {type: 'video', description: '{"title":"冰菓", "introduction":"冰菓"}'})
+            console.log(data);
+            reply = {
+                type: 'video',
+                mediaId: '0zjyDlqB1u3AHhv4Sl1A4pk-mZhqgbQ1zAvB-vvi1ng',
+                title: '冰菓',
+                description: '冰菓 OP'
+            }
+        }else if(content === "10"){
+            var data = yield wechatApi.getCount()
+            console.log(data)
+            reply = {
+                type: 'text',
+                content: 'voice_count:' + data.voice_count + "\r\n" 
+                          + 'video_count:' + data.video_count + "\r\n" 
+                          + 'image_count:' + data.image_count + "\r\n"
+                          + 'news_count:' + data.news_count + "\r\n"
+            }
         }
         
         this.body = reply;
