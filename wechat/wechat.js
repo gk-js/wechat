@@ -241,7 +241,6 @@ Wechat.prototype.updateMaterial = function(mediaId, news){
     var form = {}
     _.extend(form, news)
 
-    //todo 上传文件
     var appID = this.appID;
     var appsecret = this.appsecret
     return new Promise(function(resolve, reject){
