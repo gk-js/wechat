@@ -2,13 +2,13 @@ var Koa = require('koa');
 var wechat = require('./wechat/g');
 var config = require('./config') 
 var util = require('./libs/util')
-var weixin = require('./weixin')
+var replay = require('./wx/replay')
 // var onerror = require('koa-onerror')
 
 
 var app = new Koa();
 // onerror(app);
-app.use(wechat(config.wechat, weixin.reply))
+app.use(wechat(config.wechat, replay.reply))
 
 app.listen(3100);
 

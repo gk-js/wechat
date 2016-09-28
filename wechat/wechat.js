@@ -20,6 +20,17 @@ var api = {
         count: prefix + 'material/get_materialcount?',
         batch: prefix + 'material/batchget_material?'
 
+    },
+    user: {
+        setNickName: prefix + 'user/info/updateremark?',
+        fetch: prefix + 'user/info?',
+        fetchBatch: prefix + 'user/info/batchget?'
+    },
+    menu: {
+        add: prefix + 'menu/create?',
+        fetch: prefix + 'menu/get?',
+        delete: prefix + 'menu/delete?',
+        get_current: prefix + 'get_current_selfmenu_info?'
     }
 }
 function Wechat(opts){
@@ -327,6 +338,132 @@ Wechat.prototype.batchMaterial = function(options){
                         resolve(_data);
                     }else{
                         throw new Error('batch material fails')
+                    }
+                })
+                .catch(function(err){
+                    reject(err);
+                })
+
+            })
+    })
+}
+Wechat.prototype.fetchUserInfo = function(openId){
+    var that = this
+    var options = {
+        json: true
+    }
+    if(_.isArray(openId)){
+        options.url = api.user.fetchBatch + 'access_token='+ that.access_token
+        options.body = {
+            "user_list": openId
+        }
+        options.method = "POST"
+    }else{
+        options.url = api.user.fetch + "access_token=" + that.access_token + '&openid=' + openId + '&lang=zh_CN'
+        options.method = "GET"
+    }
+    return new Promise(function(resolve, reject){
+    that.fetchAccessToken()
+        .then(function(data){
+
+            request(options)
+            .then(function(response){
+                resolve(response.body)
+            })
+            .catch(function(err){
+                reject(err);
+            })
+        })
+    })
+}
+
+Wechat.prototype.createMenu = function(menu){
+    var that = this;
+
+    return new Promise(function(resolve, reject){
+        that.fetchAccessToken()
+            .then(function(data){
+                var url = api.menu.add + 'access_token='+ that.access_token;
+
+                var options = {
+                    method: 'POST',
+                    url: url,
+                    body: menu,
+                    json: true
+                }
+
+                request(options)
+                .then(function(response){
+                    var _data = response.body
+                    console.log(_data)
+                    if(_data){
+                        resolve(_data);
+                    }else{
+                        throw new Error('create menu fails')
+                    }
+                })
+                .catch(function(err){
+                    reject(err);
+                })
+
+            })
+    })
+}
+
+Wechat.prototype.removeMenu = function(menu){
+    var that = this;
+
+    return new Promise(function(resolve, reject){
+        that.fetchAccessToken()
+            .then(function(data){
+                var url = api.menu.delete + 'access_token='+ that.access_token;
+
+                var options = {
+                    method: 'GET',
+                    url: url,
+                    json: true
+                }
+
+                request(options)
+                .then(function(response){
+                    var _data = response.body
+                    console.log(_data)
+                    if(_data){
+                        resolve(_data);
+                    }else{
+                        throw new Error('removeMenu menu fails')
+                    }
+                })
+                .catch(function(err){
+                    reject(err);
+                })
+
+            })
+    })
+}
+
+Wechat.prototype.fetchMenu = function(menu){
+    var that = this;
+
+    return new Promise(function(resolve, reject){
+        that.fetchAccessToken()
+            .then(function(data){
+                var url = api.menu.fetch + 'access_token='+ that.access_token;
+
+                var options = {
+                    method: 'GET',
+                    url: url,
+                    json: true
+                }
+
+                request(options)
+                .then(function(response){
+                    var _data = response.body
+                    console.log(_data)
+                    if(_data){
+                        resolve(_data);
+                    }else{
+                        throw new Error('fetch menu fails')
                     }
                 })
                 .catch(function(err){
