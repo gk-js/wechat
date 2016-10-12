@@ -31,6 +31,9 @@ var api = {
         fetch: prefix + 'menu/get?',
         delete: prefix + 'menu/delete?',
         get_current: prefix + 'get_current_selfmenu_info?'
+    },
+    ticket: {
+        get: prefix + 'ticket/getticket?'
     }
 }
 function Wechat(opts){
@@ -39,6 +42,8 @@ function Wechat(opts){
     this.appsecret = opts.appsecret
     this.getAccessToken = opts.getAccessToken
     this.saveAccessToken = opts.saveAccessToken
+    this.getTicket = opts.getTicket
+    this.saveTicket = opts.saveTicket
     this.fetchAccessToken()
 }
 Wechat.prototype.fetchAccessToken = function(data){
@@ -50,7 +55,7 @@ Wechat.prototype.fetchAccessToken = function(data){
 
         }
     }
-    this.getAccessToken()
+    return this.getAccessToken()
         .then(function(data){
             try{
                 data = JSON.parse(data)
@@ -107,6 +112,73 @@ Wechat.prototype.updateAccessToken = function(){
         })
     })
 }
+
+Wechat.prototype.fetchTicket = function(access_token){
+    var that = this
+    if(this.ticket && this.expires_in){
+        if(this.isValidTicket(this)){
+            return Promise.resolve(data)
+        }else{
+
+        }
+    }
+    return this.getTicket()
+        .then(function(data){
+            try{
+                data = JSON.parse(data)
+            }
+            catch(e){
+                return that.updateTicket(access_token)
+            }
+
+            if(that.isValidTicket(data)){
+                return Promise.resolve(data)
+            }else{
+                return that.updateTicket(access_token)
+            }
+        })
+        .then(function(data){
+            
+            that.saveTicket(data)
+            
+            return Promise.resolve(data) 
+        })
+}
+
+Wechat.prototype.isValidTicket = function(data){
+    //todo 校验微信accesstoken
+    if(!data || !data.ticket || !data.expires_in){
+        return false
+    }
+    var ticket = data.ticket
+    var expires_in = data.expires_in
+    var now = new Date().getTime()
+
+    if(ticket && now < expires_in){
+        return true
+    }else{
+        return false
+    }
+}
+Wechat.prototype.updateTicket = function(){
+    //todo 更新accesstoken
+    var appID = this.appID
+    var appsecret = this.appsecret
+    var url = api.ticket.get + "access_token=" + this.access_token + '&type=jsapi';
+    return new Promise(function(resolve, reject){
+        request({url: url, json: true}).then(function(response){
+            console.log(response.body)
+            var data =  response.body;
+            console.log(data.expires_in, data.ticket)
+            var now = (new Date().getTime());
+            var expires_in = now + (data.expires_in - 20) * 1000;
+
+            data.expires_in = expires_in
+            resolve(data)
+        })
+    })
+}
+
 Wechat.prototype.reply = function(){
     //todo 回复内容
     var content = this.body; //
